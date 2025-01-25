@@ -1,1 +1,1 @@
-# Mind-Health-Classifier
+# Student Mental Health Classification
