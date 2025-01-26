@@ -1,0 +1,12 @@
+Column Name,Description
+Gender,"The gender of the individual (e.g., Male, Female)."
+Age,The age of the individual in years.
+Academic Pressure,"A numeric score indicating the level of academic pressure experienced by the individual (e.g., 1 to 5 scale)."
+Study Satisfaction,"A numeric score representing how satisfied the individual is with their study routine (e.g., 1 to 5 scale)."
+Sleep Duration,"The amount of sleep the individual gets, categorized into ranges (e.g., '5-6 hours', '7-8 hours', 'More than 8 hours')."
+Dietary Habits,"The individual's eating habits categorized as 'Healthy,' 'Unhealthy,' or 'Moderate.'"
+Have you ever had suicidal thoughts?,Indicates whether the individual has had suicidal thoughts (Yes/No).
+Study Hours,The number of hours the individual spends studying daily.
+Financial Stress,A numeric score indicating the level of financial stress experienced by the individual.
+Family History of Mental Illness,Indicates if the individual has a family history of mental illness (Yes/No).
+Depression,Indicates whether the individual has been diagnosed with depression (Yes/No).
