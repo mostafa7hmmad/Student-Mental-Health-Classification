@@ -5,6 +5,20 @@ import joblib
 import time
 from streamlit.components.v1 import html
 
+def set_background_image(image_url):
+    st.markdown(
+        f"""
+        <style>
+        .stApp {{
+            background: url("{image_url}");
+            background-size: cover;
+            background-position: center;
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
 def render_js_animation():
     animation_code = """
     <div class="container" style="position:relative; height:300px; display:flex; justify-content:center; align-items:center;">
@@ -147,6 +161,9 @@ def render_result_animation(result):
 def main():
     st.set_page_config(page_title="Mental Health Prediction", layout="wide")
 
+    # Set the background image (Replace URL with your image URL)
+    set_background_image("https://via.placeholder.com/1920x1080")
+
     # Header
     st.title("Mental Health Prediction App")
     render_js_animation()
@@ -181,11 +198,9 @@ def main():
         dietary_habits = st.sidebar.selectbox("Dietary Habits", ["Healthy", "Moderate", "Unhealthy"])
         suicidal_thoughts = st.sidebar.selectbox("Have you ever had suicidal thoughts?", ["No", "Yes"])
 
-        # Ensure all inputs are valid before returning data
         if None in [age, academic_pressure, study_satisfaction, financial_stress, study_hours]:
             return None
 
-        # Map inputs to numerical values
         dietary_map = {"Healthy": 0, "Moderate": 1, "Unhealthy": 2}
         suicidal_map = {"No": 0, "Yes": 1}
 
@@ -203,31 +218,26 @@ def main():
     df_input = user_input_features()
 
     if df_input is not None:
-        # Display user input
         st.subheader("User Input Features")
         st.write(df_input)
 
-        # Load Random Forest model
         model = joblib.load("best_rf_model.pkl")
 
-        # Predict using the model
         if st.button("Predict Mental Health Condition"):
             st.write("Processing... Please wait.")
-            with st.spinner("Predicting... This tool provides insights but is not a substitute for professional advice."):
-                time.sleep(2)  # Simulate processing time
+            with st.spinner("Predicting..."):
+                time.sleep(2)
 
-                # Prepare input
                 X_input = df_input.values
 
                 try:
-                    prediction = model.predict(X_input)[0]  # Binary prediction (0 or 1)
+                    prediction = model.predict(X_input)[0]
                     prediction_text = (
                         "Yes (Mental health condition detected)"
                         if prediction == 1
                         else "No (No mental health condition detected)"
                     )
 
-                    # Display results
                     st.subheader("Prediction Results")
 
                     message = """
@@ -244,53 +254,10 @@ def main():
                     )
                     st.markdown(message, unsafe_allow_html=True)
 
-                    # Render result animation
                     render_result_animation(prediction)
 
                 except Exception as e:
                     st.error(f"Error during prediction: {e}")
-
-    # Batch prediction section
-    st.markdown("---")
-    st.subheader("Batch Prediction")
-    uploaded_file = st.file_uploader("Upload CSV File for Batch Prediction", type="csv")
-
-    if uploaded_file is not None:
-        try:
-            df_batch = pd.read_csv(uploaded_file)
-            st.write("Uploaded Data:")
-            st.write(df_batch.head())
-
-            # Ensure necessary columns exist
-            required_columns = ["Age", "Academic Pressure", "Study Satisfaction", "Dietary Habits", "Have you ever had suicidal thoughts?", "Financial Stress", "Study Hours"]
-            if all(col in df_batch.columns for col in required_columns):
-                # Map dietary habits and suicidal thoughts columns
-                dietary_map = {"Healthy": 0, "Moderate": 1, "Unhealthy": 2}
-                suicidal_map = {"No": 0, "Yes": 1}
-
-                df_batch["Dietary Habits"] = df_batch["Dietary Habits"].map(dietary_map)
-                df_batch["Have you ever had suicidal thoughts?"] = df_batch["Have you ever had suicidal thoughts?"].map(suicidal_map)
-
-                X_batch = df_batch[required_columns].values
-                predictions = model.predict(X_batch)
-                df_batch["Prediction"] = ["Yes" if pred == 1 else "No" for pred in predictions]
-
-                st.write("Prediction Results:")
-                st.write(df_batch)
-
-                # Option to download results
-                csv = df_batch.to_csv(index=False).encode('utf-8')
-                st.download_button("Download Predictions", data=csv, file_name="predictions.csv", mime="text/csv")
-
-            else:
-                st.error(f"Uploaded file must contain the following columns: {', '.join(required_columns)}")
-
-        except Exception as e:
-            st.error(f"Error processing file: {e}")
-
-    # Footer
-    st.markdown("---")
-    st.markdown("*Developed for mental health awareness and prediction.*")
 
 if __name__ == "__main__":
     main()
