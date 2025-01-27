@@ -3,14 +3,55 @@ import pandas as pd
 import numpy as np
 import joblib
 import time
-import plotly.express as px
 from streamlit.components.v1 import html
 
-# Function to render the initial cube animation
+# Function to render the initial cube animation with 6 cubes
 def render_js_animation():
     animation_code = """
     <div class="container" style="position:relative; height:300px; display:flex; justify-content:center; align-items:center;">
         <div class="flex">
+            <div class="cube">
+                <div class="wall front"></div>
+                <div class="wall back"></div>
+                <div class="wall left"></div>
+                <div class="wall right"></div>
+                <div class="wall top"></div>
+                <div class="wall bottom"></div>
+            </div>
+            <div class="cube">
+                <div class="wall front"></div>
+                <div class="wall back"></div>
+                <div class="wall left"></div>
+                <div class="wall right"></div>
+                <div class="wall top"></div>
+                <div class="wall bottom"></div>
+            </div>
+            <div class="cube">
+                <div class="wall front"></div>
+                <div class="wall back"></div>
+                <div class="wall left"></div>
+                <div class="wall right"></div>
+                <div class="wall top"></div>
+                <div class="wall bottom"></div>
+            </div>
+        </div>
+        <div class="flex">
+            <div class="cube">
+                <div class="wall front"></div>
+                <div class="wall back"></div>
+                <div class="wall left"></div>
+                <div class="wall right"></div>
+                <div class="wall top"></div>
+                <div class="wall bottom"></div>
+            </div>
+            <div class="cube">
+                <div class="wall front"></div>
+                <div class="wall back"></div>
+                <div class="wall left"></div>
+                <div class="wall right"></div>
+                <div class="wall top"></div>
+                <div class="wall bottom"></div>
+            </div>
             <div class="cube">
                 <div class="wall front"></div>
                 <div class="wall back"></div>
@@ -35,6 +76,7 @@ def render_js_animation():
             height: 60px;
             transform-style: preserve-3d;
             animation: rotate 4s infinite;
+            margin: 10px;
         }
 
         .wall {
@@ -50,7 +92,7 @@ def render_js_animation():
         .left { transform: rotateY(-90deg) translateX(-30px); transform-origin: center left; }
         .right { transform: rotateY(90deg) translateX(30px); transform-origin: center right; }
         .top { transform: rotateX(90deg) translateY(-30px); transform-origin: top center; }
-        .bottom { transform: rotateX(-90deg) translateY(30px); transform-origin: bottom center; }
+        .bottom { transform: rotateX(-90deg) translateY(30px); }
 
         @keyframes rotate {
             0% { transform: rotateX(0deg) rotateY(0deg); }
@@ -89,6 +131,7 @@ def render_result_animation(result):
         """
     html(animation_code, height=200)
 
+# Function to create the user input form
 def centered_form():
     with st.form(key="user_input_form"):
         st.markdown("### Enter Your Details")
