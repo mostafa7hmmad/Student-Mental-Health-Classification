@@ -1,11 +1,12 @@
-
 import streamlit as st
 import pandas as pd
 import numpy as np
 import joblib
 import time
+import plotly.express as px
 from streamlit.components.v1 import html
 
+# Function to render the initial cube animation
 def render_js_animation():
     animation_code = """
     <div class="container" style="position:relative; height:300px; display:flex; justify-content:center; align-items:center;">
@@ -118,6 +119,7 @@ def render_js_animation():
     """
     html(animation_code, height=300)
 
+# Function to render result animation
 def render_result_animation(result):
     if result == 1:
         animation_code = """
@@ -148,150 +150,99 @@ def render_result_animation(result):
 def main():
     st.set_page_config(page_title="Mental Health Prediction", layout="wide")
 
-    # Header
-    st.title("Mental Health Prediction App")
+    st.markdown("""<div style="text-align:center;">
+    <h3>🌟 You are not alone, and your mental health matters! 🌟</h3>
+    <p>This tool uses machine learning models to provide insights into mental health conditions. Remember, this is not a substitute for professional help. 💙</p>
+    </div>""", unsafe_allow_html=True)
+
+    # Function for rendering centered input form
+    def centered_form():
+        with st.form(key="user_input_form"):
+            st.markdown("### Enter Your Details")
+            st.markdown("---")
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+                age = st.text_input("Age", "25")
+                academic_pressure = st.text_input("Academic Pressure (1-5)", "3")
+                study_satisfaction = st.text_input("Study Satisfaction (1-5)", "3")
+                dietary_habits = st.selectbox("Dietary Habits", ["Healthy", "Moderate", "Unhealthy"])
+
+            with col2:
+                suicidal_thoughts = st.selectbox("Have you ever had suicidal thoughts?", ["No", "Yes"])
+                study_hours = st.text_input("Study Hours per Day", "4")
+                financial_stress = st.text_input("Financial Stress (1-5)", "3")
+
+            marital_status = st.selectbox("Marital Status", ["Yes", "No"])
+            anxiety = st.selectbox("Do you have Anxiety?", ["Yes", "No"])
+            panic_attack = st.selectbox("Do you have Panic Attack?", ["Yes", "No"])
+            specialist_treatment = st.selectbox("Did you seek any specialist for a treatment?", ["Yes", "No"])
+
+            # Map categorical inputs to numerical values
+            dietary_map = {"Healthy": 0, "Moderate": 1, "Unhealthy": 2}
+            binary_map = {"Yes": 1, "No": 0}
+
+            rf_data = pd.DataFrame({
+                "Age": [int(age)],
+                "Academic Pressure": [int(academic_pressure)],
+                "Study Satisfaction": [int(study_satisfaction)],
+                "Dietary Habits": [dietary_map[dietary_habits]],
+                "Have you ever had suicidal thoughts?": [binary_map[suicidal_thoughts]],
+                "Study Hours": [int(study_hours)],
+                "Financial Stress": [int(financial_stress)]
+            })
+
+            nb_lr_data = pd.DataFrame({
+                "Marital status": [binary_map[marital_status]],
+                "Do you have Anxiety?": [binary_map[anxiety]],
+                "Do you have Panic attack?": [binary_map[panic_attack]],
+                "Did you seek any specialist for a treatment?": [binary_map[specialist_treatment]]
+            })
+
+            submit_button = st.form_submit_button(label="Predict Mental Health Condition")
+
+        return rf_data, nb_lr_data, submit_button
+
+  
     render_js_animation()
+    rf_data, nb_lr_data, submit_button = centered_form()
 
-    st.markdown("---")
-    st.markdown("### 🌟 You are not alone, and your mental health matters! 🌟")
-    st.markdown(
-        "#### This tool uses machine learning models to provide insights into mental health conditions. Remember, this is not a substitute for professional help. 💙"
-    )
+    if submit_button:
+        st.write("Processing... Please wait.")
+        with st.spinner("Predicting..."):
+            time.sleep(2)
 
-    # Sidebar
-    st.sidebar.header("User Input Features")
+            # Load models
+            rf_model = joblib.load("best_rf_model.pkl")
+            nb_model = joblib.load("best_nb.pkl")
+            logistic_model = joblib.load("beat_logistic.pkl")
 
-    def user_input_features():
-        def validate_input(value, min_val, max_val, field_name):
-            try:
-                value = int(value)
-                if value < min_val or value > max_val:
-                    st.sidebar.error(f"{field_name} must be between {min_val} and {max_val}.")
-                    return None
-                return value
-            except ValueError:
-                st.sidebar.error(f"{field_name} must be an integer.")
-                return None
+            # Random Forest prediction
+            rf_prediction = rf_model.predict(rf_data.values)[0]
 
-        age = validate_input(st.sidebar.text_input("Age", "25"), 10, 60, "Age")
-        academic_pressure = validate_input(st.sidebar.text_input("Academic Pressure (1-5)", "3"), 1, 5, "Academic Pressure")
-        study_satisfaction = validate_input(st.sidebar.text_input("Study Satisfaction (1-5)", "3"), 1, 5, "Study Satisfaction")
-        financial_stress = validate_input(st.sidebar.text_input("Financial Stress (1-5)", "3"), 1, 5, "Financial Stress")
-        study_hours = validate_input(st.sidebar.text_input("Study Hours per Day (1-16)", "4"), 1, 16, "Study Hours")
+            # Naive Bayes prediction
+            nb_prediction = nb_model.predict(nb_lr_data.values)[0]
 
-        dietary_habits = st.sidebar.selectbox("Dietary Habits", ["Healthy", "Moderate", "Unhealthy"])
-        suicidal_thoughts = st.sidebar.selectbox("Have you ever had suicidal thoughts?", ["No", "Yes"])
+            # Logistic Regression prediction
+            logistic_prediction = logistic_model.predict(nb_lr_data.values)[0]
 
-        # Ensure all inputs are valid before returning data
-        if None in [age, academic_pressure, study_satisfaction, financial_stress, study_hours]:
-            return None
+            # Voting mechanism
+            predictions = [rf_prediction, nb_prediction, logistic_prediction]
+            final_prediction = max(set(predictions), key=predictions.count)
 
-        # Map inputs to numerical values
-        dietary_map = {"Healthy": 0, "Moderate": 1, "Unhealthy": 2}
-        suicidal_map = {"No": 0, "Yes": 1}
-
-        data = {
-            "Age": age,
-            "Academic Pressure": academic_pressure,
-            "Study Satisfaction": study_satisfaction,
-            "Dietary Habits": dietary_map[dietary_habits],
-            "Have you ever had suicidal thoughts?": suicidal_map[suicidal_thoughts],
-            "Financial Stress": financial_stress,
-            "Study Hours": study_hours,
-        }
-        return pd.DataFrame(data, index=[0])
-
-    df_input = user_input_features()
-
-    if df_input is not None:
-        # Display user input
-        st.subheader("User Input Features")
-        st.write(df_input)
-
-        # Load Random Forest model
-        model = joblib.load("best_rf_model.pkl")
-
-        # Predict using the model
-        if st.button("Predict Mental Health Condition"):
-            st.write("Processing... Please wait.")
-            with st.spinner("Predicting... This tool provides insights but is not a substitute for professional advice."):
-                time.sleep(2)  # Simulate processing time
-
-                # Prepare input
-                X_input = df_input.values
-
-                try:
-                    prediction = model.predict(X_input)[0]  # Binary prediction (0 or 1)
-                    prediction_text = (
-                        "Yes (Mental health condition detected)"
-                        if prediction == 1
-                        else "No (No mental health condition detected)"
-                    )
-
-                    # Display results
-                    st.subheader("Prediction Results")
-
-                    message = """
-                    <div style="background-color:#e3f2fd;padding:20px;margin:20px;border-radius:15px;box-shadow:0 4px 8px rgba(0,0,0,0.1);">
-                        <h3 style="color:#1565c0;">Prediction Result</h3>
-                        <p style="font-size:18px;color:#333;">The prediction is: <b style='color:{};'>{}</b></p>
-                        <p style="font-size:16px;color:{};">{}</p>
-                    </div>
-                    """.format(
-                        "#ff5722" if prediction == 1 else "#4caf50",
-                        prediction_text,
-                        "#ff5722" if prediction == 1 else "#4caf50",
-                        "We encourage you to consult a mental health professional for further guidance." if prediction == 1 else "Your mental health looks positive. Keep maintaining healthy habits!",
-                    )
-                    st.markdown(message, unsafe_allow_html=True)
-
-                    # Render result animation
-                    render_result_animation(prediction)
-
-                except Exception as e:
-                    st.error(f"Error during prediction: {e}")
-
-    # Batch prediction section
-    st.markdown("---")
-    st.subheader("Batch Prediction")
-    uploaded_file = st.file_uploader("Upload CSV File for Batch Prediction", type="csv")
-
-    if uploaded_file is not None:
-        try:
-            df_batch = pd.read_csv(uploaded_file)
-            st.write("Uploaded Data:")
-            st.write(df_batch.head())
-
-            # Ensure necessary columns exist
-            required_columns = ["Age", "Academic Pressure", "Study Satisfaction", "Dietary Habits", "Have you ever had suicidal thoughts?", "Financial Stress", "Study Hours"]
-            if all(col in df_batch.columns for col in required_columns):
-                # Map dietary habits and suicidal thoughts columns
-                dietary_map = {"Healthy": 0, "Moderate": 1, "Unhealthy": 2}
-                suicidal_map = {"No": 0, "Yes": 1}
-
-                df_batch["Dietary Habits"] = df_batch["Dietary Habits"].map(dietary_map)
-                df_batch["Have you ever had suicidal thoughts?"] = df_batch["Have you ever had suicidal thoughts?"].map(suicidal_map)
-
-                X_batch = df_batch[required_columns].values
-                predictions = model.predict(X_batch)
-                df_batch["Prediction"] = ["Yes" if pred == 1 else "No" for pred in predictions]
-
-                st.write("Prediction Results:")
-                st.write(df_batch)
-
-                # Option to download results
-                csv = df_batch.to_csv(index=False).encode('utf-8')
-                st.download_button("Download Predictions", data=csv, file_name="predictions.csv", mime="text/csv")
-
+            # Display results
+            st.subheader("Prediction Results")
+            if final_prediction == 1:
+                st.markdown(
+                    "#### The system detects a potential mental health condition. Please consult a professional for further guidance."
+                )
+                render_result_animation(1)
             else:
-                st.error(f"Uploaded file must contain the following columns: {', '.join(required_columns)}")
-
-        except Exception as e:
-            st.error(f"Error processing file: {e}")
-
-    # Footer
-    st.markdown("---")
-    st.markdown("*Developed for mental health awareness and prediction.*")
+                st.markdown(
+                    "#### No mental health condition detected. Keep maintaining a healthy lifestyle!"
+                )
+                render_result_animation(0)
 
 if __name__ == "__main__":
     main()
